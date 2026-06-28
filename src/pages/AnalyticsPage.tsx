@@ -190,6 +190,23 @@ export default function AnalyticsPage() {
     }
   }, [user])
 
+  // Normalize weekly review properties to support both snake_case and camelCase
+  const normalizedReview = weeklyReview ? {
+    overall_grade: weeklyReview.overall_grade || (weeklyReview as any).overallGrade || (weeklyReview as any).grade || '-',
+    biggest_achievement: weeklyReview.biggest_achievement || (weeklyReview as any).biggestAchievement || 'Awaiting data for achievements',
+    most_productive_day: weeklyReview.most_productive_day || (weeklyReview as any).mostProductiveDay || 'N/A',
+    tasks_completed: weeklyReview.tasks_completed ?? (weeklyReview as any).tasksCompleted ?? 0,
+    total_focus_hours: weeklyReview.total_focus_hours ?? (weeklyReview as any).totalFocusHours ?? 0,
+    goals_progressed: weeklyReview.goals_progressed || (weeklyReview as any).goalsProgressed || [],
+    personalized_advice: weeklyReview.personalized_advice || (weeklyReview as any).personalizedAdvice || (weeklyReview as any).advice || 'Keep up the good work! Add more tasks to get personalized advice.',
+    areas_for_improvement: weeklyReview.areas_for_improvement || (weeklyReview as any).areasForImprovement || []
+  } : null;
+
+  if (weeklyReview) {
+    console.log('[WeeklyReview] Received raw:', weeklyReview);
+    console.log('[WeeklyReview] Normalized:', normalizedReview);
+  }
+
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
       {/* Header */}
@@ -230,16 +247,16 @@ export default function AnalyticsPage() {
             <Loader2 className="w-6 h-6 text-indigo-600 animate-spin" />
             <p className="text-sm font-bold text-foreground">Sage is analyzing your week...</p>
           </div>
-        ) : weeklyReview ? (
+        ) : normalizedReview ? (
           <div className="space-y-6">
             {/* Grade + Achievement */}
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
               <div className="w-16 h-16 rounded-2xl bg-white border border-surface-container-high flex items-center justify-center shadow-md">
-                <span className={`text-3xl font-black ${gradeColors[weeklyReview?.overall_grade as string] || 'text-foreground'}`}>{weeklyReview?.overall_grade || '-'}</span>
+                <span className={`text-3xl font-black ${gradeColors[normalizedReview.overall_grade] || 'text-foreground'}`}>{normalizedReview.overall_grade}</span>
               </div>
               <div className="flex-1">
-                <p className="text-sm font-bold text-foreground flex items-center gap-1.5"><Award className="w-4 h-4 text-amber-500" /> {weeklyReview?.biggest_achievement || 'Awaiting data for achievements'}</p>
-                <p className="text-xs text-muted-foreground mt-1">Most productive day: <span className="font-bold text-foreground">{weeklyReview?.most_productive_day || 'N/A'}</span></p>
+                <p className="text-sm font-bold text-foreground flex items-center gap-1.5"><Award className="w-4 h-4 text-amber-500" /> {normalizedReview.biggest_achievement}</p>
+                <p className="text-xs text-muted-foreground mt-1">Most productive day: <span className="font-bold text-foreground">{normalizedReview.most_productive_day}</span></p>
               </div>
             </div>
 
@@ -247,15 +264,15 @@ export default function AnalyticsPage() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="rounded-xl p-3 bg-white border border-surface-container-high text-center shadow-sm">
                 <p className="text-[9px] font-black uppercase tracking-wider text-muted-foreground">Tasks Done</p>
-                <p className="text-xl font-black text-emerald-600">{weeklyReview?.tasks_completed || 0}</p>
+                <p className="text-xl font-black text-emerald-600">{normalizedReview.tasks_completed || realStats.tasksCompleted}</p>
               </div>
               <div className="rounded-xl p-3 bg-white border border-surface-container-high text-center shadow-sm">
                 <p className="text-[9px] font-black uppercase tracking-wider text-muted-foreground">Focus Hours</p>
-                <p className="text-xl font-black text-blue-600">{weeklyReview?.total_focus_hours || 0}h</p>
+                <p className="text-xl font-black text-blue-600">{normalizedReview.total_focus_hours || realStats.focusHours}h</p>
               </div>
               <div className="rounded-xl p-3 bg-white border border-surface-container-high text-center shadow-sm">
                 <p className="text-[9px] font-black uppercase tracking-wider text-muted-foreground">Goals</p>
-                <p className="text-xl font-black text-purple-600">{Array.isArray(weeklyReview.goals_progressed) ? weeklyReview.goals_progressed.length : 0}</p>
+                <p className="text-xl font-black text-purple-600">{normalizedReview.goals_progressed.length || realStats.activeGoals}</p>
               </div>
               <div className="rounded-xl p-3 bg-white border border-surface-container-high text-center shadow-sm">
                 <p className="text-[9px] font-black uppercase tracking-wider text-muted-foreground">Streak</p>
@@ -264,13 +281,13 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Goals Progress */}
-            {Array.isArray(weeklyReview.goals_progressed) && weeklyReview.goals_progressed.length > 0 && (
+            {normalizedReview.goals_progressed.length > 0 && (
               <div>
                 <p className="text-xs font-black uppercase tracking-wider text-muted-foreground mb-2">🎯 Goal Progress</p>
                 <div className="flex flex-wrap gap-2">
-                  {weeklyReview.goals_progressed.map((g, i) => (
+                  {normalizedReview.goals_progressed.map((g: any, i: number) => (
                     <span key={i} className="px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-700">
-                      {g.title}: {g.progress_change}
+                      {g.title || g.name || JSON.stringify(g)}: {g.progress_change || g.progress || '+0%'}
                     </span>
                   ))}
                 </div>
@@ -280,15 +297,15 @@ export default function AnalyticsPage() {
             {/* AI Advice */}
             <div className="rounded-2xl p-4 bg-indigo-50/60 border border-indigo-200">
               <p className="text-xs font-black uppercase tracking-wider text-indigo-600 mb-1">💡 Sage's Advice</p>
-              <p className="text-sm font-semibold text-foreground leading-relaxed">{weeklyReview?.personalized_advice || 'Keep up the good work! Add more tasks to get personalized advice.'}</p>
+              <p className="text-sm font-semibold text-foreground leading-relaxed">{normalizedReview.personalized_advice}</p>
             </div>
 
             {/* Areas for Improvement */}
-            {Array.isArray(weeklyReview.areas_for_improvement) && weeklyReview.areas_for_improvement.length > 0 && (
+            {normalizedReview.areas_for_improvement.length > 0 && (
               <div>
                 <p className="text-xs font-black uppercase tracking-wider text-muted-foreground mb-2">📈 Areas to Improve</p>
                 <div className="space-y-1.5">
-                  {weeklyReview.areas_for_improvement.map((area, i) => (
+                  {normalizedReview.areas_for_improvement.map((area: string, i: number) => (
                     <p key={i} className="text-xs text-muted-foreground flex items-center gap-1.5">
                       <TrendingUp className="w-3 h-3 text-amber-500 flex-shrink-0" /> {area}
                     </p>
