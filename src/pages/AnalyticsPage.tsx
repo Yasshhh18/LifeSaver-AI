@@ -6,7 +6,7 @@ import {
 } from 'recharts'
 import { 
   Calendar, TrendingUp, TrendingDown, Clock, Target, 
-  Brain, ShieldAlert, Sparkles, Heart, Activity, Loader2, Award, CheckCircle2, Star
+  Brain, ShieldAlert, RefreshCw, Sparkles, Heart, Activity, Loader2, Award, CheckCircle2, Star
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { getProgressLogs, getFocusSessions, getTasks, getGoals, getGardenProgress } from '@/services/dataService'
@@ -40,6 +40,33 @@ export default function AnalyticsPage() {
   const [reviewLoading, setReviewLoading] = useState(true)
   const [insights, setInsights] = useState<InsightCard[]>([])
   const [insightsLoading, setInsightsLoading] = useState(true)
+
+  const handleForceRefresh = async () => {
+    if (!user) return
+    setReviewLoading(true)
+    try {
+      const { db } = await import('@/services/firebase')
+      const { doc, deleteDoc } = await import('firebase/firestore')
+      
+      // Invalidate both caches in Firestore
+      await Promise.all([
+        deleteDoc(doc(db, 'ai_cache', `${user.uid}_weekly_review`)),
+        deleteDoc(doc(db, 'ai_cache', `${user.uid}_productivity_insights`))
+      ])
+      
+      // Request fresh analyses from Gemini
+      const review = await generateWeeklyReview(user.uid)
+      setWeeklyReview(review)
+      
+      const result = await generateProductivityInsights(user.uid)
+      const cards = Array.isArray(result) ? result : ((result as any)?.insights || [])
+      setInsights(cards)
+    } catch (err) {
+      console.error('Failed to force refresh weekly review:', err)
+    } finally {
+      setReviewLoading(false)
+    }
+  }
 
   // Load real Firebase data
   useEffect(() => {
@@ -182,10 +209,20 @@ export default function AnalyticsPage() {
         }}
       >
         <div className="absolute top-[-50px] right-[-50px] w-48 h-48 rounded-full bg-indigo-200/15 blur-[50px] pointer-events-none" />
-        <div className="flex items-center gap-2 mb-5">
-          <Brain className="w-5 h-5 text-indigo-600" />
-          <span className="text-xs font-black uppercase tracking-widest text-indigo-700">AI Weekly Review</span>
-          <span className="text-[9px] px-1.5 py-0.5 rounded bg-indigo-600 text-white font-black tracking-wider uppercase">Gemini</span>
+        <div className="flex items-center gap-2 mb-5 w-full justify-between">
+          <div className="flex items-center gap-2">
+            <Brain className="w-5 h-5 text-indigo-600" />
+            <span className="text-xs font-black uppercase tracking-widest text-indigo-700">AI Weekly Review</span>
+            <span className="text-[9px] px-1.5 py-0.5 rounded bg-indigo-600 text-white font-black tracking-wider uppercase">Gemini</span>
+          </div>
+          <button 
+            onClick={handleForceRefresh}
+            disabled={reviewLoading}
+            className="flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-indigo-700 hover:text-indigo-900 transition-colors bg-white px-2.5 py-1 rounded-lg border border-indigo-200 shadow-sm cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3 h-3 ${reviewLoading ? 'animate-spin' : ''}`} />
+            Recalculate
+          </button>
         </div>
 
         {reviewLoading ? (
