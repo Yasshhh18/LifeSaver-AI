@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+dist/
+
+# Environment variables (NEVER commit these)
+.env
+.env.local
+.env.*.local
+
+# Editor directories and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Supabase
+supabase/.temp/
+
+# Firebase cache
+.firebase/
+
+# Build caches
+*.tsbuildinfo
+
+# Zipped assets / temp archives
+*.zip
+
+# Temporary test scripts
+test-*.mjs
+test-*.js
+test.js
+refactor.cjs
