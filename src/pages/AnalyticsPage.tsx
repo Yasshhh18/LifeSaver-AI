@@ -44,9 +44,8 @@ export default function AnalyticsPage() {
   // Load real Firebase data
   useEffect(() => {
     if (!user) return
-    let cancelled = false
 
-    const loadData = async () => {
+    const loadData = async (cancelled: boolean) => {
       setStatsLoading(true)
       try {
         const [tasks, progressLogs, focusSessions, goals, garden] = await Promise.all([
@@ -117,16 +116,7 @@ export default function AnalyticsPage() {
       }
     }
 
-    loadData()
-    return () => { cancelled = true }
-  }, [user])
-
-  // Load AI features
-  useEffect(() => {
-    if (!user) return
-    let cancelled = false
-
-    const loadAI = async () => {
+    const loadAI = async (cancelled: boolean) => {
       // Weekly Review
       setReviewLoading(true)
       try {
@@ -152,8 +142,25 @@ export default function AnalyticsPage() {
       }
     }
 
-    loadAI()
-    return () => { cancelled = true }
+    let isCancelled = false
+    loadData(isCancelled)
+    loadAI(isCancelled)
+
+    const handleUpdate = () => {
+      if (user) {
+        loadData(false)
+        loadAI(false)
+      }
+    }
+
+    window.addEventListener('tasks_updated', handleUpdate)
+    window.addEventListener('garden_updated', handleUpdate)
+
+    return () => {
+      isCancelled = true
+      window.removeEventListener('tasks_updated', handleUpdate)
+      window.removeEventListener('garden_updated', handleUpdate)
+    }
   }, [user])
 
   return (
