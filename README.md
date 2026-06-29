@@ -108,6 +108,3 @@ Built with **React**, **Vite**, **TailwindCSS**, **Firebase**, and **Google Gemi
 LifeSaver AI uses a highly structured prompt engineering system via `geminiService.ts`. It builds a comprehensive `UserContext` by aggregating data from Firestore (Tasks, Goals, Focus Sessions, Garden Stats) and passes this context to Gemini, requesting strictly typed JSON schemas in return. 
 
 Features like the **Daily Briefing** and **Weekly Review** utilize a smart caching layer in Firestore (`ai_cache` collection) to minimize API costs and ensure instant UI load times, while specialized triggers (like the "Seed Data" button) intelligently invalidate the cache when fresh calculations are needed.
-
-## 📄 License
-This project is open-source and available under the MIT License.
