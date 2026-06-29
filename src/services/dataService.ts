@@ -22,22 +22,35 @@ export async function getTasks(userId: string): Promise<Task[]> {
   return tasks.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 }
 
+// Helper to clean undefined fields before sending to Firestore
+function cleanUndefined<T extends Record<string, any>>(obj: T): T {
+  const cleaned = { ...obj } as any
+  Object.keys(cleaned).forEach(key => {
+    if (cleaned[key] === undefined) {
+      delete cleaned[key]
+    }
+  })
+  return cleaned
+}
+
 export async function createTask(task: Omit<Task, 'id' | 'created_at' | 'updated_at'>): Promise<Task> {
   const now = new Date().toISOString()
-  const docRef = await addDoc(collection(db, 'tasks'), {
+  const taskData = cleanUndefined({
     ...task,
     tags: task.tags || [],
     created_at: now,
     updated_at: now,
   })
-  return { id: docRef.id, ...task, created_at: now, updated_at: now } as Task
+  const docRef = await addDoc(collection(db, 'tasks'), taskData)
+  return { id: docRef.id, ...taskData } as Task
 }
 
 export async function updateTask(id: string, updates: Partial<Task>): Promise<void> {
-  await updateDoc(doc(db, 'tasks', id), {
+  const cleanUpdates = cleanUndefined({
     ...updates,
     updated_at: new Date().toISOString(),
   })
+  await updateDoc(doc(db, 'tasks', id), cleanUpdates)
 }
 
 export async function deleteTask(id: string): Promise<void> {
