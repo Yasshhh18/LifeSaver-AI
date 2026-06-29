@@ -77,8 +77,8 @@ Built with **React**, **Vite**, **TailwindCSS**, **Firebase**, and **Google Gemi
 
 1. Clone the repository:
    ```bash
-   git clone <your-repo-url>
-   cd ai-saver-2
+   git clone https://github.com/Yasshhh18/LifeSaver-AI.git
+   cd LifeSaver-AI
    ```
 
 2. Install dependencies:
